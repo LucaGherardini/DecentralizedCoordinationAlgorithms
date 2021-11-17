@@ -1,0 +1,25 @@
+Combinations
+To limit the amount of simulations, and to have a base of comparison between them, stochastic elements (bidding and routing) have been set to a deterministic behavior (fixed)
+
+    Cooperative winner-pays 2   enabled  balanced    fixed  10000   100     OK
+    Cooperative winner-pays 2   disabled balanced    fixed  10000   100     OK
+    Cooperative all-pay     2   enabled  balanced    fixed  10000   100     OK
+    Cooperative all-pay     2   disabled balanced    fixed  10000   100     OK
+-----------------------
+"Competitive" simulations have a "sponsorship" parameter fixed at "50%" of budget as maximum sponsorship amount
+
+    Competitive winner-pays 2   enabled  balanced    50  fixed   10000   100    OK
+    Competitive winner-pays 2   disabled balanced    50  fixed   10000   100    OK
+    Competitive all-pay     2   enabled  balanced    50  fixed   10000   100    OK
+    Competitive all-pay     2   disabled balanced    50  fixed   10000   100    OK
+-----------------------
+"Emergent Behavior" simulations are much less than possible ones, and crucial parameters are shuffled in order to see most important to further investigate
+    TODO: investigate better ways to limit hurry explosion
+    EmergentBehavior    linear          10  logarithmic     100  distance-based logarithmic      100  10  only-positive   fixed   10000   100
+    EmergentBehavior    linear          10  logarithmic     100  range-based logarithmic         100  10  only-positive   fixed   10000   100
+    EmergentBehavior    linear          10  grower          100  range-based logarithmic         100  10  only-positive   fixed   10000   100
+    EmergentBehavior    linear          10  grower          100  distance-based logarithmic      100  10  only-positive   fixed   10000   100
+    EmergentBehavior    logarithmic     10  linear          100  standard-exchange               100  10  allow-negative  fixed   10000   100
+    EmergentBehavior    logarithmic     10  linear          100  range-based logarithmic         100  10  allow-negative  fixed   10000   100
+    EmergentBehavior    grower          10  linear          100  standard-exchange               100  10  allow-negative  fixed   10000   100
+    EmergentBehavior    grower          10  linear          100  range-based logarithmic         100  10  allow-negative  fixed   10000   100

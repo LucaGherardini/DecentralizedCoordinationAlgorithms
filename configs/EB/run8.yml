@@ -1,0 +1,14 @@
+model: EB
+MCA: 1
+IF: lin
+DF: lin
+SF: dbl
+IC: 10
+DC: 10
+SR: 100
+DM: 10
+SP: AN
+Rts: r
+Stp: 10000
+VS: 100
+RUNS: 10

@@ -1,0 +1,144 @@
+- SUMO_HOME is defined in "Run Simulation" configuration, otherwise it has to be specified in main.py code by
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], "tools"))
+before SUMO libraries importation (requires "import sys" before)
+SUMO_HOME=/usr/bin/sumo
+
+- "balanced bidding" indicates that vehicles makes bids considering how many crossroads they have to cross, until the end of their route
+
+- Routes files (traditional 'project.rou.xml' and 'try.rou.xml', the latter is a simplified version of the former) are not consideret, to use default vehicles type and a different approach to routing
+<route-files value="project.rou.xml"/>
+<additional-files value="project.add.xml"/>
+
+- "Collecting Waiting Times" part notes
+df_waiting_times = dataframe containing all the waiting times from vehicles, both crossroad and traffic waiting times.
+cross_total_statistics = summary of total auction waiting time at crossroads
+traffic_total_statistics = summary of total traffic waiting time at crossroads
+crossroads_statistics = summary of auction waiting time for each crossroad
+traffic_statistics = summary of traffic waiting time for each crossroad
+crossroad_vehicles_statistics = plot of auction waiting time for each vehicle
+traffic_vehicles_statistics = plot of traffic waiting time for each vehicle
+
+df_waiting_times, cross_total_statistics and traffic_total_statistics are used to compare simulations
+crossroads_statistics, traffic_statistics, crossroad_vehicles_statistics and traffic_vehicles_statistics are instead used to plot data in graphic representation.
+
+- sumo/sumo-gui use a time step of one second per default. You may override this using the --step-length <TIME> option. <TIME> is by giving a value in seconds between [0.001 and 1.0].
+Example: --step-length 0.01 will run the simulation using time steps of 10ms.
+
+- '--waiting-time-memory <TIME>' Length of time interval, over which accumulated waiting time is taken into account (default is 100s.); default: 100
+You could invoke traci with <TIME> as number of steps of the simulation (problem for 'Infinite' time steps)
+
+- '--threads <INT>'	Defines the number of threads for parallel simulation; default: 1
+It has to be considered to speed up simulation
+
+- Parameters codename
+models:
+    Coop = Cooperative
+    Comp = Competitive
+    EB = Emergent Behavior
+settings:
+    CP = Crossing Policy
+    MCA = Minimum Cars for Auction
+    E = Enhancement
+    Bdn = Bidding
+    Spn = Sponsorship
+    IF = Increasing Function
+    IC = Increasing Coefficient
+    DF = Decreasing Function
+    DC = Decreasing Coefficient
+    SF = Spreading Function
+    SR = Spreading Range
+    DM = Distance Magnitude
+    SP = Spreading Polarity
+    Rts = Routes
+    Stp = Steps
+    VS = Vehicles to Spawn
+values:
+    owp / avp = Crossing Policy (only winner pays / all vehicles pay)
+    y / n = Enhancement (yes / no)
+    b / r = Bidding (balanced / random)
+    lin / log / gro = Increasing (or Decreasing) Function (linear / logarithmic / grower)
+    std / dbl / rbl = Spreading Function (standard exchange / distance-based logarithmic / range-based logarithmic)
+    op / an = Spreading Polarity (only positive / allow negative)
+    f / r = Routes (fixed / random)
+
+- Emergent Behavior Incr/Decr combos (with same coefficient and 'allow-negative')
+
+Results seen after ~1000 steps
+Temperature:    Stable (Returns to low values after long free travels), Cold (Values very small, always), Hot (Values explodes and don't damp)
+                more hot (values can become high), more cold (values stay low)
+Incr    Decr    Temperature
+---------------------------
+lin     lin     Stable
+lin     log     Cold
+log     log     Stable (more hot)
+log     lin     Hot
+log     gro     Stable (more hot)
+lin     gro     Stable (more cold)
+gro     gro     Hot
+gro     log     Hot
+gro     lin     Hot
+
+- Combinations
+To limit the amount of simulations, and to have a base of comparison between them, stochastic elements (bidding and routing) have been set to a deterministic behavior (fixed)
+
+    Coop wp 2 y     OK
+    Coop wp 2 n     OK
+    Coop ap 2 y     OK
+    Coop ap 2 n     OK
+-----------------------
+"Competitive" simulations have a "sponsorship" parameter fixed at "50%" of budget as maximum sponsorship amount
+
+    Comp wp 2 y     OK
+    Comp wp 2 n     OK
+    Comp ap 2 y     OK
+    Comp ap 2 n     OK
+-----------------------
+"Emergent Behavior" simulations are much less than possible ones, and crucial parameters are shuffled in order to see most important to further investigate
+
+    TODO: check 'Emergent Behavior Incr/Decr combos'
+    EmergentBehavior    linear          10  logarithmic     10  distance-based logarithmic      OK
+    EmergentBehavior    linear          10  logarithmic     10  range-based logarithmic         OK
+    EmergentBehavior    linear          10  grower          10  range-based logarithmic         OK
+    EmergentBehavior    linear          10  grower          10  distance-based logarithmic      OK
+    EmergentBehavior    logarithmic     10  linear          10  standard-exchange               OK
+    EmergentBehavior    logarithmic     10  linear          10  range-based logarithmic         OK
+
+-----------------------------
+Specific Combinations
+
+Cooperative
+    Coop wp 2 y     OK
+    Coop wp 2 n     OK
+    Coop ap 2 y     OK
+    Coop ap 2 n     OK
+
+Competitive
+    Comp wp 2 y b 25    OK
+    Comp wp 2 n b 25    OK
+    Comp ap 2 y b 25    OK
+    Comp ap 2 n b 25    OK
+    Comp wp 2 y b 50    OK
+    Comp wp 2 n b 50    OK
+    Comp ap 2 y b 50    OK
+    Comp ap 2 n b 50    OK
+    Comp wp 2 y b 75    OK
+    Comp wp 2 n b 75    OK
+    Comp ap 2 y b 75    OK
+    Comp ap 2 n b 75    OK
+
+Emergent Behaviour (only "stable" configurations, with fixed range (100) and standard distance magnitude (10), and negative contributions allowed)
+    EmergentBehavior    linear          linear          standard-exchange               OK
+    EmergentBehavior    linear          linear          distance-based logarithmic      OK
+    EmergentBehavior    linear          linear          range-based logarithmic         OK
+
+    EmergentBehavior    linear          grower          standard-exchange               OK
+    EmergentBehavior    linear          grower          distance-based logarithmic      OK
+    EmergentBehavior    linear          grower          range-based logarithmic         OK
+
+    EmergentBehavior    logarithmic     logarithmic     standard-exchange               OK
+    EmergentBehavior    logarithmic     logarithmic     distance-based logarithmic      OK
+    EmergentBehavior    logarithmic     logarithmic     range-based logarithmic         OK
+
+    EmergentBehavior    logarithmic     grower          standard-exchange               OK
+    EmergentBehavior    logarithmic     grower          distance-based logarithmic      OK
+    EmergentBehavior    logarithmic     grower          range-based logarithmic         OK

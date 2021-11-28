@@ -1,0 +1,10 @@
+model: Comp
+CP: avp
+MCA: 2
+E: n
+Spn: 75
+Bdn: r
+Rts: r
+Stp: 10000
+VS: 100
+RUNS: 10

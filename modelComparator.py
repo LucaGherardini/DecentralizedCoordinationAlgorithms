@@ -26,11 +26,11 @@ def plot(data, title):
     plt.xticks(range(len(labels) + 1), [''] + labels)
     plt.tick_params(axis='y', labelsize=16)
     plt.tick_params(axis='x', which='major', labelsize=14)
-    #plt.grid(True)
+    plt.grid(True)
     plt.subplots_adjust(left=left_margin, bottom=bot_margin, top=top_margin, right=right_margin)
     n = 1
     for m in data:
-        plt.text(n-0.15, m[0]+6, f'{m[2]:5.2f}', fontsize=14)
+        plt.text(n-0.15, m[0]+(0.7-0.7/len(str(m[0]))), f'{m[2]:5.2f}', fontsize=14)
         n+=1
     plt.savefig('plots/' + title + '.png')
     print('Plot saved as \"' + title + '.png\"')

@@ -1,22 +1,21 @@
+import abc
 import sys
 
 from utils import *
 from random import randint
 import math
 
+'''
+    Abstract class of a generic vehicle, to be expanded and customized for different models
+'''
+class VehicleAbstract(abc.ABC):
 
-class Vehicle:
-
-    def __init__(self, id, settings, budget=100):
+    def __init__(self, id, settings):
         self.id = id
         self.settings = settings
         self.route = traci.vehicle.getRoute(id)
-        self.budget = int(budget)
-        self.hurry = 0
-        self.hurry_contribution = 0
         self.position = self.getPosition()
 
-        self.crossroad_counter = self.countCrossroads()
         self.waitedTimes = defaultdict(list)
 
         self.traffic_waited_times = defaultdict(list)
@@ -28,6 +27,7 @@ class Vehicle:
     def __str__(self):
         return "Car " + self.getID()
 
+    @abc.abstractmethod
     def reroute(self):
         """
         reroute check and eventually reassign route to a vehicle dependently on setting chosen (static or dynamic)
@@ -65,96 +65,9 @@ class Vehicle:
                     current_edge = chosen_edge
 
             traci.vehicle.setRoute(self.id, list(self.route))
-            
             # When rerouting I count new crossroads to cross
             self.crossroad_counter = self.countCrossroads()
-            if 'Bdn' in self.settings.keys() and self.settings['Bdn'] == 'b':
-                self.setBudget(100)
         return
-
-    def changeHurry(self):
-        """
-        Hurry is increased for each step in which the vehicle is stationary (speed is 0) and decreased for each step in motion, applying the corresponding function with the given coefficient (increment and decrement are not necessarily symmetric).
-        'contribution' stores the step update for the function to be applied
-        'function' stores the kind of function to apply
-        'polarity' stores the sign of the update (positive if its an increment, negative otherwise)
-        :return:
-        """
-        function = ''
-        polarity = 0
-        if traci.vehicle.getSpeed(self.id) == 0:
-            contribution = self.settings['IC']
-            function = 'IF'
-            polarity = 1
-        else:
-            contribution = self.settings['DC']
-            function = 'DF'
-            polarity = -1
-
-        # if function is 'linear', we've already done
-        if self.settings[function] == 'log':
-            contribution *= math.log(self.hurry+2)
-        elif self.settings[function] == 'gro':
-            contribution = max(contribution * self.hurry/100, contribution)
-
-        contribution = int(contribution * polarity)
-        # hurry cannot be negative
-        self.hurry = max(self.hurry + contribution, 0)
-        return contribution
-
-    def hurrySpreading(self, n, distance):
-        """
-        Given the neighbor 'n' of current vehicle, in a 'distance' within the specified 'Range', apply the specified 'Spreading' function based on the difference between 'Hurry', restricted dependently by 'Spread Type' ('only-positive' and 'allow-negative').
-        Computed 'contribution' is added to 'hurry_contribution', that is a container of the current influences received in that time step, to be applied in 'applyContribution' invocation, at the end of time step routine. Contribution isn't directly applied to allow "symmetric updating" (otherwise, two vehicles with the same 'Hurry' would have different reciprocal contributions dependently to their contribution computation).
-        For computing correctly 'contribution', absolute value of 'diff' is considered (log of a negative number doesn't exist) and original sign is stored in 'polarity' parameter (+1 if it is an increment, -1 if it is a decrement).
-        :return: 'contribution' computed for the given pair (vehicle, neighbor). It's returned to allow writing in simulation log.
-        """
-        diff = n.getHurry() - self.hurry
-
-        # if diff is zero, quit now
-        if diff == 0:
-            return 0
-        # if diff is negative, and only positive values are allowed, quit now
-        if diff < 0 and self.settings['SP'] == 'op':
-            return 0
-
-        polarity = math.copysign(1, diff)
-        diff = abs(diff)
-
-        if self.settings['SF'] == 'std':
-            contribution = diff / (distance * self.settings['DM'])
-        elif self.settings['SF'] == 'dbl':
-            contribution = math.log(diff + 1) * (distance * self.settings['DM'])
-        elif self.settings['SF'] == 'rbl':
-            contribution = math.log(diff + 1) * ((self.settings['SR'] * self.settings['DM']) / distance)
-
-        contribution = int(contribution * polarity)
-        self.hurry_contribution += contribution
-
-        return contribution
-
-    def applyContribution(self):
-        """
-        All contributions received in the current time step is applied, ensuring that 'Hurry' won't be negative, and resetting 'hurry_contribution' counter for the next time step
-        :return:
-        """
-        self.hurry = max(self.hurry + self.hurry_contribution, 0)
-        self.hurry_contribution = 0
-
-    def getHurry(self):
-        return self.hurry
-
-    def setLabel(self, model_chosen):
-        """
-        'State' parameter of traci vehicle is used to label graphically them in the GUI with a custom value, dependently by 'model_chosen'
-        """
-        if model_chosen == 'EB':
-            value = self.hurry
-        else:
-            value = self.budget
-
-        traci.vehicle.setParameter(self.id, 'State', value)
-
 
     def countCrossroads(self):
         """
@@ -171,26 +84,11 @@ class Vehicle:
                 edge_length = traci.lane.getLength(e + "_0")
                 traci.vehicle.setStop(self.id, e, float(edge_length), duration=1000000.0)
         return counter
+    
 
-    def makeBid(self):
-        """
-        dependently on given bidding policy, returns a random bid or a thoughtful bid partitioned for the crossroads to pass
-        :return:
-        bid, made from the vehicle for its auction
-        """
-        if self.settings['Bdn'] == 'b':
-            return self.getBudget()/self.crossroad_counter
-        else:
-            return randint(0, int(self.getBudget()))
-
-    def makeSponsor(self):
-        """
-        for 'Competitive' approach, sponsorships consists in a bid participation to help the head of the queue, in order
-        to speed traffic flow in that lane
-        :return:
-        sponsorship randomly picked, according to set sponsorship percentage
-        """
-        return randint(0, int(self.getBudget() * self.settings['Spn'] * 0.01))
+    @abc.abstractmethod
+    def setLabel(self):
+        return
 
     def getID(self):
         return self.id
@@ -204,19 +102,13 @@ class Vehicle:
     def getPosition(self):
         return traci.vehicle.getPosition(self.id)
 
-    def setBudget(self, budget):
-        if budget > 0:
-            self.budget = int(budget)
-
-    def getBudget(self):
-        return self.budget
+    
 
     """
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CrossroadWaitingTime section
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
     """
-
     def getTimePassedAtCrossroad(self, current_crossroad, idle_time):
         """
         If 'crossroad_waiting_time' is set (!= 0), then time spent still at the crossroad is memorized in the corresponding
@@ -253,8 +145,7 @@ class Vehicle:
     TrafficWaitingTime section
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
     """
-
-    def getTimePassedInTraffic(self, current_crossroad, idle_time):
+    def getTimePassedInTraffic(self, current_crossroad, idle_time=0):
         """
         As for 'getTimePassedAtCrossroad', 'idle_time' is removed from statistics
         :param current_crossroad: String containing name of crossroad where vehicles was awaiting

@@ -1,11 +1,11 @@
-# Vehicles coordination algorithms
-
+'''
+OLD SCRIPT TO BE DELETED
+'''
 from cooperative import *
 from competitive import *
-from emergent_behavior import *
 from datetime import datetime
 from utils import *
-from listener import *
+from listeners import *
 
 def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
     sumoCmd = [sumoBinary, "-c", "project.sumocfg", "--threads", "8"]

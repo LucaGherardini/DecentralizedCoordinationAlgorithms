@@ -9,8 +9,13 @@ from crossroad import Crossroad
 import matplotlib.pyplot as plt
 import pandas as pd
 
+import yaml
+from subprocess import Popen, PIPE, STDOUT
+
 # Color ASCII used to change color of prints
-from vehicle import Vehicle
+from vehicleCA import VehicleCA
+from vehicleDA import VehicleDA
+from vehicleEB import VehicleEB
 
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'
@@ -30,6 +35,23 @@ l = ""
 prompt the user to chose which model using for simulation
 """
 
+def read_config():
+    output = Popen("find configs/ -wholename \'*.yml\'", shell=True, stdout=PIPE)
+    config_files = str(output.stdout.read()).removeprefix('b\'').removesuffix('\'').removesuffix('\\n').split('\\n')
+
+    configs = []
+    for f in config_files:
+        f = f.removeprefix("\"").removeprefix("\'").removesuffix("\"")
+        with open(f, "r") as ymlfile:
+            configs.append(yaml.load(ymlfile, Loader=yaml.FullLoader))
+
+    return configs
+
+def manual_config(models):
+    model_chosen = modelSelection(models)
+    configs = simulationSettings(model_chosen)
+    # configs is encapsulated and returned as a list because in read_config the configurations of all the yml files read are stored in this way
+    return [configs]
 
 def modelSelection(models):
     """
@@ -43,7 +65,7 @@ def modelSelection(models):
         pt.add_row([models.index(m) + 1, m])
 
     selector = 0
-    while selector == 0:
+    while selector < 1 or selector > len(models):
         os.system('clear')
         print(pt)
         try:
@@ -51,8 +73,6 @@ def modelSelection(models):
         except:
             print(FAIL + 'Wrong input. Retry' + ENDC)
             continue
-        if selector > len(models) or selector < 0:
-            selector = 0
 
     pt.clear()
     return models[selector - 1]
@@ -116,6 +136,10 @@ def simulationSettings(model_chosen):
 
     options.append('VS')
     values.append(100)
+
+    options.append('RUNS')
+    values.append(1)
+
     menu_fields = options.copy()
     for f in range(len(menu_fields)):
         menu_fields[f] = menu_fields[f] + " [" + str(f + 1) + "]"  # indices start from '1'
@@ -231,6 +255,16 @@ def simulationSettings(model_chosen):
                     values[change_setting] = vehicles_to_spawn
                 continue
 
+            # Simulation RUNS
+            if options[change_setting] == 'RUNS':
+                try:
+                    runs = int(input("How many runs should be made? [default: 1]: "))
+                except:
+                    runs = 1
+                if runs > 0:
+                    values[change_setting] = runs
+                continue
+
             # Incr./Decr. function for Hurry
             if options[change_setting] == 'IF' or options[change_setting] == 'DF':
                 try:
@@ -314,10 +348,12 @@ def simulationSettings(model_chosen):
                 continue
 
     pt.clear()
-    settings = {options[i]: values[i] for i in range(len(options))}
+    options.append('model')
+    values.append(model_chosen)
+    configs = {options[i]: values[i] for i in range(len(options))}
     if model_chosen == 'EB':
-        settings['MCA'] = 1
-    return settings
+        configs['MCA'] = 1
+    return configs
 
 
 def retrieveCrossroadsNames():
@@ -373,7 +409,14 @@ def spawnCars(cars_to_spawn, settings):
     for i in range(cars_to_spawn):
         traci.vehicle.add(str(i), routes[i % len(routes)])
         traci.simulationStep()
-        vehicles.append(Vehicle(str(i), settings))
+        if settings['model'] == 'Comp' or settings['model'] == 'Coop':
+            v = VehicleCA(str(i), settings)
+        if settings['model'] == 'EB':
+            v = VehicleEB(str(i), settings)
+        if settings['model'] == 'DA':
+            v = VehicleDA(str(i), settings)
+        
+        vehicles.append(v)
         # Maximum speed is limited to 50 km/h (1.39 m/s) to allow comparison with Gambelli's simulation
         traci.vehicle.setMaxSpeed(str(i), 1.39)
     return vehicles
@@ -432,6 +475,8 @@ def plot(df, xlabel, title, name):
     plt.subplots_adjust(left=left_margin, bottom=0.1, top=0.9, right=right_margin)
     plt.savefig("plots/" + name)
     print(OKGREEN + "Plot saved in plots/" + name + ENDC)
+
+    return
 
 
 def collectWT(vehicles, crossroads_names):

@@ -1,12 +1,13 @@
 # Vehicles coordination algorithms
-# Centralized Auction 
 
+from datetime import datetime
+import multiprocessing
+
+from src.emergent_behavior import EmergentBehavior
 from src.cooperative import *
 from src.competitive import *
-from datetime import datetime
 from src.utils import *
 from src.listeners import *
-import multiprocessing
 
 def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
     sumoCmd = [sumoBinary, "-c", "sumo_cfg/project.sumocfg", "--threads", "8"]
@@ -23,8 +24,11 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
         # Vehicles are created all at once, then loaded into "vehicles" list of 'Vehicle' class instances
         vehicles = spawnCars(settings['VS'], settings)
 
-        # Add a StepListener to increment step counter at each call of traci.simulationStep()
-        listener = Listener(settings['Stp'], vehicles, settings)
+        if model_chosen == 'Coop' or model_chosen == 'Comp':
+            # Add a StepListener to increment step counter at each call of traci.simulationStep()
+            listener = Listener(settings['Stp'], vehicles, settings)
+        else:
+            listener = AutonomousListener(settings['Stp'], vehicles, settings)
         traci.addStepListener(listener)
 
         time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -35,18 +39,25 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
             model = Cooperative(settings, vehicles)
         elif model_chosen == 'Comp':
             model = Competitive(settings, vehicles)
+        elif model_chosen == 'EB':
+            model = EmergentBehavior(settings, vehicles)
+        #elif model_chosen == 'DA':
+            #model = DecentralizedAuction(settings, vehicles)
 
         while True:
-            # This method manage crossroads on the map
-            dc = {}
-            idle_times = {}
-            for crossroad in crossroads.keys():
-                log_print('Handling crossroad {}'.format(crossroad))
-                dc[crossroad], idle_times[crossroad] = model.intersectionControl(crossroads[crossroad], listener)
-                if not listener.getSimulationStatus():
-                    break
+            if model_chosen == 'EB' or model_chosen == 'DA':
+                traci.simulationStep()
+            else:
+                # This method manage crossroads on the map
+                dc = {}
+                idle_times = {}
+                for crossroad in crossroads.keys():
+                    log_print('Handling crossroad {}'.format(crossroad))
+                    dc[crossroad], idle_times[crossroad] = model.intersectionControl(crossroads[crossroad], listener)
+                    if not listener.getSimulationStatus():
+                        break
 
-            departCars(settings, dc, idle_times, listener)
+                departCars(settings, dc, idle_times, listener)
 
             if not listener.getSimulationStatus():
                 log_print('Simulation finished')
@@ -61,8 +72,8 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
     
     return vehicles, crossroads_names, time
 
-def sim(configs, chunk_name, q):
-    vehicles, crossroads_names, time = run(configs, configs['model'], chunk_name, sumoBinary="/usr/bin/sumo")
+def sim(configs, chunk_name, sumoBinary, q):
+    vehicles, crossroads_names, time = run(configs, configs['model'], chunk_name, sumoBinary)
     cross_total, traffic_total, df_waiting_times, crossroads_wt, traffic_wt, crossroad_vehicles, traffic_vehicles = collectWT(vehicles, crossroads_names)
     
     file_name = '[' + time + ']' + configs['model']
@@ -108,7 +119,10 @@ if __name__ == '__main__':
     if choice == 1:
         configs = read_config()
     else:
-        configs = manual_config(['Coop', 'Comp'])
+        configs = manual_config(['Coop', 'Comp', 'EB', 'DA'])
+
+    sumo = input('Graphical Interface [y/N]: ')
+    sumo = 'sumo-gui' if sumo == 'y' or sumo == 'Y' else 'sumo' 
 
     counter = 0
     q = multiprocessing.Queue()
@@ -128,7 +142,7 @@ if __name__ == '__main__':
 
         chunk_name = 1
         for i in range(int(settings["RUNS"])):
-            p =multiprocessing.Process(target=sim, args=(settings, chunk_name, q))
+            p =multiprocessing.Process(target=sim, args=(settings, chunk_name, f'/usr/bin/{sumo}', q))
             processes.append(p)
             p.start()
             chunk_name += 1

@@ -1,11 +1,12 @@
 from src.utils import *
 from src.vehicleAutonomous import VehicleAutonomous
+from src.crossroad import Crossroad
 from math import *
 
 class VehicleEB(VehicleAutonomous):
 
     def __init__(self, id, settings) -> None:
-        super().__init__(self, id, settings)
+        super().__init__(id, settings)
         self.hurry = 0
         self.hurry_contribution = 0
 
@@ -26,7 +27,32 @@ class VehicleEB(VehicleAutonomous):
                     increment = self.hurrySpreading(n, distance)
                     #log_print('step: vehicle {} has received by {} a contribution of {}'.format(self.getID(), n.getID(), increment))
     
+        if traci.vehicle.isStopped(self.getID()):
+            self.getTimePassedInTraffic()
+            self.cross()
+        elif traci.vehicle.getSpeed(self.getID()) < traci.vehicle.getAllowedSpeed(self.getID()) and traci.vehicle.getRoadID(self.getID()) in Crossroad.getInEdges():
+                self.setTrafficWaitingTime()
+
         return 
+    
+    def cross(self):
+        target_cr = traci.vehicle.getRoadID(self.getID()).split('-')[-1] # The last letter is the target crossroad (i.e. A)
+        re_crossroads = re.compile(rf"edge.*-{target_cr}")
+        for c in Crossroad.getInEdges():
+            if re.match(re_crossroads, c):
+                for v in traci.edge.getLastStepVehicleIDs(c):
+                    if traci.vehicle.isStopped(v):
+                        if v.getHurry()>self.getHurry():
+                            break # you lost the comparison
+        # if you haven't found any vehicle competing for the same crossroad...
+        else:
+            # ... depart
+            traci.vehicle.resume(self.getID())
+            self.getTimePassedAtCrossroad(target_cr)
+
+        self.setCrossroadWaitingTime()
+
+        return
 
     def setLabel(self):
         """
@@ -101,7 +127,6 @@ class VehicleEB(VehicleAutonomous):
         """
         self.hurry = max(self.hurry + self.hurry_contribution, 0)
         self.hurry_contribution = 0
-
     
     def getHurry(self):
         return self.hurry

@@ -25,7 +25,6 @@ class VehicleAbstract(abc.ABC):
     def __str__(self):
         return "Car " + self.getID()
 
-    @abc.abstractmethod
     def reroute(self):
         """
         reroute check and eventually reassign route to a vehicle dependently on setting chosen (static or dynamic)

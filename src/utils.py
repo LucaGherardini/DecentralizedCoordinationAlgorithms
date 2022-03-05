@@ -5,18 +5,17 @@ from prettytable import PrettyTable
 import re
 import traci
 from collections import defaultdict
-from crossroad import Crossroad
 import matplotlib.pyplot as plt
 import pandas as pd
-
 import yaml
 from subprocess import Popen, PIPE, STDOUT
 
-# Color ASCII used to change color of prints
-from vehicleCA import VehicleCA
-from vehicleDA import VehicleDA
-from vehicleEB import VehicleEB
+from src.vehicleCA import VehicleCA
+from src.vehicleDA import VehicleDA
+from src.vehicleEB import VehicleEB
+from src.crossroad import Crossroad
 
+# Color ASCII used to change color of prints
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'
 OKCYAN = '\033[96m'

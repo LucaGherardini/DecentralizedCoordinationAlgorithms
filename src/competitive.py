@@ -1,6 +1,4 @@
-from operator import itemgetter
-
-from intersectionManager import *
+from src.intersectionManager import *
 import math
 
 

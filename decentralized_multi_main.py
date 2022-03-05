@@ -5,7 +5,7 @@ from utils import *
 from listeners import *
 
 def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
-    sumoCmd = [sumoBinary, "-c", "project.sumocfg", "--threads", "8"]
+    sumoCmd = [sumoBinary, "-c", "sumo_cfg/project.sumocfg", "--threads", "8"]
 
     """
         Simulation runs

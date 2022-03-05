@@ -1,9 +1,7 @@
 import abc
-import sys
 
-from utils import *
+from src.utils import *
 from random import randint
-import math
 
 '''
     Abstract class of a generic vehicle, to be expanded and customized for different models

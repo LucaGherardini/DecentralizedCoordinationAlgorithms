@@ -1,4 +1,4 @@
-from vehicleAuction import VehicleAuction
+from src.vehicleAuction import VehicleAuction
 from random import randint
 
 class VehicleCA(VehicleAuction):

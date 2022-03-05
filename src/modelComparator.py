@@ -41,6 +41,10 @@ def plot(data, title):
 data = defaultdict(dict)
 date_format = r'\[(.)+\]'
 file_format = r'\|(cross-total|traffic-total)'
+
+# moving in the upper directory level
+os.chdir(os.getcwd()+'/../')
+
 print(WARNING + 'Reading simulations results from "data" folder...' + ENDC)
 for i in sorted(os.listdir('data')):
     # cross_total

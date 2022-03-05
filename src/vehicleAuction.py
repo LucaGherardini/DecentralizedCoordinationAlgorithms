@@ -1,5 +1,5 @@
-from utils import *
-from vehicleAbstract import *
+from src.utils import *
+from src.vehicleAbstract import *
 
 class VehicleAuction(VehicleAbstract):
 

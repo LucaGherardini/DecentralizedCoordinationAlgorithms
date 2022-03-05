@@ -1,23 +1,15 @@
 # Vehicles coordination algorithms
 # Centralized Auction 
 
-from cooperative import *
-from competitive import *
+from src.cooperative import *
+from src.competitive import *
 from datetime import datetime
-from utils import *
-from listeners import *
+from src.utils import *
+from src.listeners import *
 import multiprocessing
 
-# Vehicles coordination algorithms
-
-from cooperative import *
-from competitive import *
-from datetime import datetime
-from utils import *
-from listeners import *
-
 def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
-    sumoCmd = [sumoBinary, "-c", "project.sumocfg", "--threads", "8"]
+    sumoCmd = [sumoBinary, "-c", "sumo_cfg/project.sumocfg", "--threads", "8"]
 
     """
         Simulation runs

@@ -1,7 +1,7 @@
-from utils import *
-from vehicleAbstract import *
-from vehicleAuction import VehicleAuction
-from vehicleAutonomous import VehicleAutonomous
+from src.utils import *
+from src.vehicleAbstract import *
+from src.vehicleAuction import VehicleAuction
+from src.vehicleAutonomous import VehicleAutonomous
 
 class VehicleDA(VehicleAuction, VehicleAutonomous):
     def action(self):

@@ -1,4 +1,4 @@
-from intersectionManager import *
+from src.intersectionManager import *
 import math
 
 class Cooperative(IntersectionManager):

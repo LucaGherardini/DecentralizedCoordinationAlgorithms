@@ -1,6 +1,5 @@
-from utils import *
-from vehicleAbstract import VehicleAbstract
-from vehicleAutonomous import VehicleAutonomous
+from src.utils import *
+from src.vehicleAutonomous import VehicleAutonomous
 from math import *
 
 class VehicleEB(VehicleAutonomous):

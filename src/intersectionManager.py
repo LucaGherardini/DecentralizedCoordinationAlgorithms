@@ -1,4 +1,4 @@
-from utils import *
+from src.utils import *
 from operator import itemgetter
 
 class IntersectionManager:

@@ -1,7 +1,4 @@
 import traci
-from src.utils import log_print
-
-
 class Listener(traci.StepListener):
 
     def __init__(self, step_limit, vehicles, settings):
@@ -19,7 +16,7 @@ class Listener(traci.StepListener):
         """
 
         self.step_count += 1
-        # '>' is needed because step_count doesn't start by 0. If step_limit is lower than vehicles to spawn, step_count is yet greater then step_limit
+        # '>' is needed because step_count doesn't start by 0. If step_limit is lower than vehicles to spawn, step_count is yet greater than step_limit
         if self.step_limit != 0 and self.step_count >= self.step_limit:
             self.simulation_status = False
             return False
@@ -47,10 +44,12 @@ class Listener(traci.StepListener):
 
 class AutonomousListener(Listener):
     def __init__(self, step_limit, vehicles, settings):
-        super.__init__(step_limit, vehicles, settings)
+        super().__init__(step_limit, vehicles, settings)
 
     def step(self, t):
         super().step(t)
 
         for v in self.vehicles:
-            v.do()
+            v.action()
+
+        return True

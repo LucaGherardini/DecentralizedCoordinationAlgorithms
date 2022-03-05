@@ -1,11 +1,13 @@
 # Vehicles coordination algorithms
 
+from audioop import cross
 from datetime import datetime
 import multiprocessing
+import math
 
-from src.emergent_behavior import EmergentBehavior
-from src.cooperative import *
-from src.competitive import *
+from src.utility_print import *
+from src.cooperative import Cooperative
+from src.competitive import Competitive
 from src.utils import *
 from src.listeners import *
 
@@ -31,7 +33,7 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
             listener = AutonomousListener(settings['Stp'], vehicles, settings)
         traci.addStepListener(listener)
 
-        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         log_file_initialization(chunk_name, settings, model_chosen, listener, time)
         log_print("Simulation starts")
 
@@ -39,10 +41,8 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
             model = Cooperative(settings, vehicles)
         elif model_chosen == 'Comp':
             model = Competitive(settings, vehicles)
-        elif model_chosen == 'EB':
-            model = EmergentBehavior(settings, vehicles)
-        #elif model_chosen == 'DA':
-            #model = DecentralizedAuction(settings, vehicles)
+
+        # NOTE: EB and DA don't need a dedicated class, the specific vehicles 'are' the classes
 
         while True:
             if model_chosen == 'EB' or model_chosen == 'DA':
@@ -76,7 +76,7 @@ def sim(configs, chunk_name, sumoBinary, q):
     vehicles, crossroads_names, time = run(configs, configs['model'], chunk_name, sumoBinary)
     cross_total, traffic_total, df_waiting_times, crossroads_wt, traffic_wt, crossroad_vehicles, traffic_vehicles = collectWT(vehicles, crossroads_names)
     
-    file_name = '[' + time + ']' + configs['model']
+    file_name = f'{chunk_name}[' + time + ']' + configs['model']
     for s in configs.keys():
         file_name += '_' + s + ':' + str(configs[s])
 
@@ -90,7 +90,7 @@ def sim(configs, chunk_name, sumoBinary, q):
     traffic_wt.to_csv(data_file.format('traffic') + '.txt', header=['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max'])
     crossroad_vehicles.to_csv(data_file.format('crossroad-vehicles') + '.txt', header=['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max'])
     traffic_vehicles.to_csv(data_file.format('traffic-vehicles') + '.txt', header=['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max'])
-    print(OKGREEN + 'Raw data written in data/[{}]{}|*.txt'.format(time, configs['model']) + ENDC)
+    print(OKGREEN + f'Raw data written in data/{chunk_name}[{time}]{configs["model"]}|*.txt' + ENDC)
 
     # Plots are of the last run finishing
     plot(crossroads_wt, 'Crossroads', 'Average crossroad waiting time for each crossroad', file_name.format('crossroads') + '.png')
@@ -98,8 +98,10 @@ def sim(configs, chunk_name, sumoBinary, q):
     plot(crossroad_vehicles, 'Cars', 'Average crossroad waiting time of each car', file_name.format('crossroad-vehicles') + '.png')
     plot(traffic_vehicles, 'Cars', 'Average traffic waiting time of each car', file_name.format('traffic-vehicles') + '.png')
 
-    q.put(int(cross_total['mean']))
-    q.put(int(traffic_total['mean']))
+    cross_total['mean'] = 0 if math.isnan(cross_total['mean']) else cross_total['mean']
+    traffic_total['mean'] = 0 if math.isnan(traffic_total['mean']) else traffic_total['mean']
+
+    q.put([cross_total['mean'], traffic_total['mean']])
 
     return
 
@@ -125,19 +127,10 @@ if __name__ == '__main__':
     sumo = 'sumo-gui' if sumo == 'y' or sumo == 'Y' else 'sumo' 
 
     counter = 0
+
     q = multiprocessing.Queue()
     for settings in configs:
-        all_times = pd.DataFrame(columns=['cwt', 'twt']) 
-
-        file_name = '[' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ']' + settings['model']
-        for s in settings.keys():
-            file_name += '_' + s + ':' + str(settings[s])
-
-        file_name += '|{}'
-
-        cwt_file = open('data/' + file_name.format('cross-total') + '.txt', 'a')    
-        twt_file = open('data/' + file_name.format('traffic-total') + '.txt', 'a')
-        
+            
         processes = []
 
         chunk_name = 1
@@ -150,16 +143,23 @@ if __name__ == '__main__':
         for p in processes:
             p.join()
 
-        # Note that you have to call Queue.get() for each item you want to return.
-        while not q.empty():
-            cwt = q.get()
-            twt = q.get()
-            cwt_file.write(str(cwt)+'\n')
-            twt_file.write(str(twt)+'\n')
-        cwt_file.close()
-        twt_file.close()
-
-        counter += 1
-        print(f"Chunk {counter}/{len(configs)} finished")
+        if settings['RUNS'] > 1:
+            #all_times = pd.DataFrame(columns=['cwt', 'twt']) 
+            file_name = f'[MULTIRUN_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}]' + settings['model']
+            for s in settings.keys():
+                file_name += '_' + s + ':' + str(settings[s])
+            file_name += '|{}'
+            cwt_file = open('data/' + file_name.format('cross-total') + '.txt', 'w')    
+            twt_file = open('data/' + file_name.format('traffic-total') + '.txt', 'w')
+            # Note that you have to call Queue.get() for each item you want to return.
+            while not q.empty():
+                cwt, twt = q.get()
+                cwt_file.write(str(cwt)+'\n')
+                twt_file.write(str(twt)+'\n')
+            cwt_file.close()
+            twt_file.close()
+            print(f'Cumulative results of runs saved as {file_name}')
+            counter += 1
+            print(f"Chunk {counter}/{len(configs)} finished")
 
     print("All done")

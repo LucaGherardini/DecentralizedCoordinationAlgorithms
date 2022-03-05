@@ -1,4 +1,5 @@
 from src.utils import *
+from src.crossroadsDict import CrossroadsDict
 
 class Crossroad:
     name = ""
@@ -10,6 +11,7 @@ class Crossroad:
         self.name = name
         self.in_edges = in_edges
         self.position = position
+        CrossroadsDict.addCrossroad(self)
 
     def getName(self):
         return self.name

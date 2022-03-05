@@ -106,20 +106,21 @@ class VehicleAbstract(abc.ABC):
     CrossroadWaitingTime section
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
     """
-    def getTimePassedAtCrossroad(self, current_crossroad, idle_time):
+    def getTimePassedAtCrossroad(self, current_crossroad, idle_time=0):
         """
-        If 'crossroad_waiting_time' is set (!= 0), then time spent still at the crossroad is memorized in the corresponding
+        If 'crossroad_waiting_time' is set (!= -1), then time spent still at the crossroad is memorized in the corresponding
         dict 'crossroads_waited_times', for the given crossroad. 'crossroad_counter' is not decreased to allow homogeneous
         bidding on all the crossroads of the route.
         :param current_crossroad: is the crossroad where the vehicle is currently passing
         :param idle_time: is a fraction of time spent awaiting vehicles to have the auction (excluded from the statistics)
         :return: time passed at the crossroad, 0 if there is not awaiting
         """
-        if self.crossroad_waiting_time != 0:
+        if self.crossroad_waiting_time != -1:
             time_passed = max((traci.simulation.getTime() - self.crossroad_waiting_time - idle_time), 0)
             self.crossroads_waited_times[current_crossroad].append(time_passed)  # memorize in seconds
             # if getTimePassedAtCrossroad is invoked, then a crossroad has been crossed, so crossroad_counter has to be decreased by 1
             #self.crossroad_counter -= 1
+            self.resetCrossroadWaitingTime()
             return time_passed
         return 0
 
@@ -128,11 +129,11 @@ class VehicleAbstract(abc.ABC):
         If 'crossroad_waiting_time' timer has not yet been set, it's set with the current time in simulation
         :return:
         """
-        if self.crossroad_waiting_time == 0:
+        if self.crossroad_waiting_time == -1:
             self.crossroad_waiting_time = traci.simulation.getTime()
 
     def resetCrossroadWaitingTime(self):
-        self.crossroad_waiting_time = 0
+        self.crossroad_waiting_time = -1
 
     def getCrossroadWaitedTimes(self):
         return self.crossroads_waited_times
@@ -149,18 +150,15 @@ class VehicleAbstract(abc.ABC):
         :param idle_time: time spent awaiting for other vehicles to start auction
         :return:
         """
-        if self.traffic_waiting_time != 0:
+        if self.traffic_waiting_time != -1:
             time_passed = max((traci.simulation.getTime() - self.traffic_waiting_time - idle_time), 0)
-            self.traffic_waiting_time = 0
-            # ignore null waiting times, they are not important for statistics (unlike crossroad waiting times)
-            if time_passed != 0:
-                self.traffic_waited_times[current_crossroad].append(time_passed)
-
+            self.traffic_waited_times[current_crossroad].append(time_passed)
+            self.traffic_waiting_time = -1
             return time_passed
         return 0
 
     def setTrafficWaitingTime(self):
-        if self.traffic_waiting_time == 0:
+        if self.traffic_waiting_time == -1:
             self.traffic_waiting_time = traci.simulation.getTime()
 
     def getTrafficWaitedTimes(self):

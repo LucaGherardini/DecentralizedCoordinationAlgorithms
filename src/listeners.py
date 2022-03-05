@@ -25,21 +25,6 @@ class Listener(traci.StepListener):
             return False
 
         for v in self.vehicles:
-            '''
-            if self.model_chosen == 'EB':
-                log_print('step: vehicle {} has an hurry of {}'.format(v.getID(), v.getHurry()))
-                log_print('step: vehicle {} has an hurry alteration of {}'.format(v.getID, v.changeHurry()))
-                log_print('step: vehicle {} new hurry is {}'.format(v.getID(), v.getHurry()))
-                for neighbor in traci.lane.getLastStepVehicleIDs(traci.vehicle.getLaneID(v.getID())):
-                    if neighbor != v.getID():
-                        n = self.vehicles[int(neighbor)]
-                        distance = int(pow(pow(n.getPosition()[0] - v.getPosition()[0], 2) + (pow(n.getPosition()[1] - v.getPosition()[1], 2)), 0.5))
-                        assert distance > 0
-                        if distance <= self.settings['SR']:
-                            log_print('step: vehicle {} invocation of \'hurryDiffusion\' (neighbor {}, at distance {})'.format(v.getID(), n.getID(), distance))
-                            increment = v.hurrySpreading(n, distance)
-                            log_print('step: vehicle {} has received by {} a contribution of {}'.format(v.getID(), n.getID(), increment))
-            '''
             v.reroute()
             v.setLabel()
 

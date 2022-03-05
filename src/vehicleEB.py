@@ -10,9 +10,21 @@ class VehicleEB(VehicleAutonomous):
         self.hurry_contribution = 0
 
     def action(self):
-        '''
-        Here, the EB vehicle should invoke changeHurry, spreading its state and comparing its Hurry with those of other vehicles to decide who should pass
-        '''
+        self.applyContribution()
+
+        #log_print('step: vehicle {} has an hurry of {}'.format(self.getID(), self.getHurry()))
+        #log_print('step: vehicle {} has an hurry alteration of {}'.format(self.getID(), self.changeHurry()))
+        #log_print('step: vehicle {} new hurry is {}'.format(self.getID(), self.getHurry()))
+        for neighbor in traci.lane.getLastStepVehicleIDs(traci.vehicle.getLaneID(self.getID())):
+            if neighbor != self.getID():
+                n = self.vehicles[int(neighbor)]
+                distance = int(pow(pow(n.getPosition()[0] - self.getPosition()[0], 2) + (pow(n.getPosition()[1] - self.getPosition()[1], 2)), 0.5))
+                assert distance > 0
+                if distance <= self.settings['SR']:
+                    log_print('step: vehicle {} invocation of \'hurryDiffusion\' (neighbor {}, at distance {})'.format(self.getID(), n.getID(), distance))
+                    increment = self.hurrySpreading(n, distance)
+                    log_print('step: vehicle {} has received by {} a contribution of {}'.format(v.getID(), n.getID(), increment))
+    
         return 
 
     def setLabel(self):

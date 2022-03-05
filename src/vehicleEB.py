@@ -21,9 +21,10 @@ class VehicleEB(VehicleAutonomous):
                 distance = int(pow(pow(n.getPosition()[0] - self.getPosition()[0], 2) + (pow(n.getPosition()[1] - self.getPosition()[1], 2)), 0.5))
                 assert distance > 0
                 if distance <= self.settings['SR']:
-                    log_print('step: vehicle {} invocation of \'hurryDiffusion\' (neighbor {}, at distance {})'.format(self.getID(), n.getID(), distance))
+                    #log_print('step: vehicle {} invocation of \'hurryDiffusion\' (neighbor {}, at distance {})'.format(self.getID(), n.getID(), distance))
+                    # NOTE: variable 'increment' is used just for journaling, consider removing it definitely
                     increment = self.hurrySpreading(n, distance)
-                    log_print('step: vehicle {} has received by {} a contribution of {}'.format(v.getID(), n.getID(), increment))
+                    #log_print('step: vehicle {} has received by {} a contribution of {}'.format(self.getID(), n.getID(), increment))
     
         return 
 

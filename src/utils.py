@@ -1,11 +1,11 @@
 # Auxiliary class with used methods, to slim code of "main.py"
+from distutils.command.config import config
 import os
 
 from prettytable import PrettyTable
 import re
 import traci
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import pandas as pd
 import yaml
 from subprocess import Popen, PIPE, STDOUT
@@ -28,8 +28,29 @@ def read_config():
     output = Popen("find configs/ -wholename \'*.yml\'", shell=True, stdout=PIPE)
     config_files = str(output.stdout.read()).removeprefix('b\'').removesuffix('\'').removesuffix('\\n').split('\\n')
 
+    pt.field_names = ['#', 'File']
+    pt.align['File'] = 'l'
+    for c in config_files:
+        pt.add_row([config_files.index(c) + 1, c])   
+
+    os.system('clear')
+    print(pt)
+    try:
+        selector = int(input(BOLD + 'Choose configuration file to run [hit \'Enter\' to execute all]: ' + ENDC))
+        if selector < 0 or selector > len(config_files): raise Exception()
+    except:
+        selector = 0
+
+    pt.clear()
+
+    files_to_read = []
+    if selector == 0:
+        files_to_read = config_files
+    else:
+        files_to_read.append(config_files[selector-1])
+
     configs = []
-    for f in config_files:
+    for f in files_to_read:
         f = f.removeprefix("\"").removeprefix("\'").removesuffix("\"")
         with open(f, "r") as ymlfile:
             configs.append(yaml.load(ymlfile, Loader=yaml.FullLoader))
@@ -106,12 +127,15 @@ def simulationSettings(model_chosen):
     options = []
     values = []
     if model_chosen == 'Coop' or model_chosen == 'Comp':
-        options = ['CP', 'MCA', 'E', 'Bdn']
-        values = ['owp', 2, 'y', 'b']
+        options = ['CP', 'MCA', 'E']
+        values = ['owp', 2, 'y']
+    if model_chosen == 'Coop' or model_chosen == 'Comp' or model_chosen == 'DA':
+        options.append('Bdn')
+        values.append('b')
     if model_chosen == 'Comp':
         options.append('Spn')
         values.append(50)
-    if model_chosen == 'EB':
+    elif model_chosen == 'EB':
         options = ['IF', 'IC', 'DF', 'DC', 'SF', 'SR',
                    'DM', 'SP']
         values = ['lin', 10, 'lin', 10, 'std', 100, 10.0, 'an']
@@ -432,41 +456,6 @@ def departCars(settings, dc, idle_times, listener):
             traci.simulationStep()
         if not listener.getSimulationStatus():
             break
-
-
-def plot(df, xlabel, title, name):
-    """
-    Create a box plot showing given waiting times
-    :param df: dataframe to be accessed to retrieve values to display
-    :param xlabel: title to put on X-axis
-    :param title: title of the graph
-    :param name: file name in which storing the produced graph
-    :param index: DataFrame first column index to access
-    :return:
-    """
-    width_figure = max(len(df.index) * 0.5, 10)
-    left_margin = max(1 / (len(df.index)), 0.02)
-    right_margin = max(1 - 1 / (len(df.index)), 0.8)
-    plt.figure(figsize=(width_figure, 5.0))
-    box = []
-    for k, vs in df.iterrows():
-        box.append([vs['max'], vs['min'], vs['mean'], vs['25%'], vs['75%']])
-    plt.boxplot(box, widths=0.6, whis=200)
-    plt.xticks(range(len(df.index) + 1),
-               [""] + df.index.to_list())  # this put cars's id on x-axis
-    plt.tick_params(axis='x', which='major', labelsize=10)
-
-    plt.grid(True)
-    plt.ylabel("waiting time (s)")
-    plt.xlabel(xlabel)
-    plt.title(title)
-
-    plt.subplots_adjust(left=left_margin, bottom=0.1, top=0.9, right=right_margin)
-    plt.savefig("plots/" + name)
-    print(OKGREEN + "Plot saved in plots/" + name + ENDC)
-
-    return
-
 
 def collectWT(vehicles, crossroads_names):
     """

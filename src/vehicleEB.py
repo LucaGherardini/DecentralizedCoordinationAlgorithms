@@ -31,7 +31,7 @@ class VehicleEB(VehicleAutonomous):
                     self.hurrySpreading(float(traci.vehicle.getParameter(n, 'State')), distance)
                     #log_print('step: vehicle {} has received by {} a contribution of {}'.format(self.getID(), n.getID(), increment))
     
-        if traci.vehicle.getSpeed(self.getID()) < traci.vehicle.getAllowedSpeed(self.getID()):
+        if traci.vehicle.getSpeed(self.getID()) < traci.vehicle.getAllowedSpeed(self.getID()) * 0.1:
             target_cr = traci.vehicle.getRoadID(self.getID()).split('-')[-1] # The last letter is the target crossroad (i.e. A)
             if traci.vehicle.isStopped(self.getID()):
                 self.getTimePassedInTraffic(target_cr)

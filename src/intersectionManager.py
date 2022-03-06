@@ -38,7 +38,6 @@ class IntersectionManager:
             log_print('intersectionControl: idle_time set at {}'.format(idle_time))
             crossroad.resetIdleTime()
             log_print('intersectionControl: \'resetIdleTime\' invocation for crossroad {}'.format(crossroad.getName()))
-            # if crossroad is empty (i.e. for 'Emergent Behavior' model) there is no need to departing cars
 
             return departing_cars, idle_time
 

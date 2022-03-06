@@ -11,7 +11,7 @@ from src.competitive import Competitive
 from src.utils import *
 from src.listeners import *
 
-def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
+def run(settings, model_chosen, chunk_name=0, time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S"), sumoBinary="/usr/bin/sumo"):
     sumoCmd = [sumoBinary, "-c", "sumo_cfg/project.sumocfg", "--threads", "8"]
 
     """
@@ -33,7 +33,6 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
             listener = AutonomousListener(settings['Stp'], vehicles, settings)
         traci.addStepListener(listener)
 
-        time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         log_file_initialization(chunk_name, settings, model_chosen, listener, time)
         log_print("Simulation starts")
 
@@ -70,10 +69,11 @@ def run(settings, model_chosen, chunk_name=0, sumoBinary="/usr/bin/sumo-gui"):
         log_print('Simulation interrupted')
         print("Simulation interrupted")
     
-    return vehicles, crossroads_names, time
+    return vehicles, crossroads_names
 
-def sim(configs, chunk_name, sumoBinary, q):
-    vehicles, crossroads_names, time = run(configs, configs['model'], chunk_name, sumoBinary)
+def sim(configs, chunk_name=0, time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S"), sumoBinary="/usr/bin/sumo-gui", lock=None, q=None):
+    vehicles, crossroads_names = run(configs, configs['model'], chunk_name, time, sumoBinary)
+
     cross_total, traffic_total, df_waiting_times, crossroads_wt, traffic_wt, crossroad_vehicles, traffic_vehicles = collectWT(vehicles, crossroads_names)
     
     file_name = f'{chunk_name}[' + time + ']' + configs['model']
@@ -92,16 +92,22 @@ def sim(configs, chunk_name, sumoBinary, q):
     traffic_vehicles.to_csv(data_file.format('traffic-vehicles') + '.txt', header=['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max'])
     print(OKGREEN + f'Raw data written in data/{chunk_name}[{time}]{configs["model"]}|*.txt' + ENDC)
 
-    # Plots are of the last run finishing
-    plot(crossroads_wt, 'Crossroads', 'Average crossroad waiting time for each crossroad', file_name.format('crossroads') + '.png')
-    plot(traffic_wt, 'Crossroads', 'Average traffic waiting time for each crossroad', file_name.format('traffic') + '.png')
-    plot(crossroad_vehicles, 'Cars', 'Average crossroad waiting time of each car', file_name.format('crossroad-vehicles') + '.png')
-    plot(traffic_vehicles, 'Cars', 'Average traffic waiting time of each car', file_name.format('traffic-vehicles') + '.png')
+    if chunk_name == 0:
+        # NOTE: there is a problem for subsequent processes trying to plot theirs results, they quit from 'sim' and don't put results in queue
+        # Plots are of the first run
+        plot(crossroads_wt, 'Crossroads', 'Average crossroad waiting time for each crossroad', file_name.format('crossroads') + '.png')
+        plot(traffic_wt, 'Crossroads', 'Average traffic waiting time for each crossroad', file_name.format('traffic') + '.png')
+        plot(crossroad_vehicles, 'Cars', 'Average crossroad waiting time of each car', file_name.format('crossroad-vehicles') + '.png')
+        plot(traffic_vehicles, 'Cars', 'Average traffic waiting time of each car', file_name.format('traffic-vehicles') + '.png')
 
+    '''
     cross_total['mean'] = 0 if math.isnan(cross_total['mean']) else cross_total['mean']
     traffic_total['mean'] = 0 if math.isnan(traffic_total['mean']) else traffic_total['mean']
+    '''
 
-    q.put([cross_total['mean'], traffic_total['mean']])
+    if q is not None:
+        q.put(int(cross_total['mean']))
+        q.put(int(traffic_total['mean']))
 
     return
 
@@ -129,23 +135,23 @@ if __name__ == '__main__':
     counter = 0
 
     q = multiprocessing.Queue()
+    lock = multiprocessing.Lock()
     for settings in configs:
             
         processes = []
+        time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
-        chunk_name = 1
         for i in range(int(settings["RUNS"])):
-            p =multiprocessing.Process(target=sim, args=(settings, chunk_name, f'/usr/bin/{sumo}', q))
-            processes.append(p)
+            p =multiprocessing.Process(target=sim, args=(settings, i, time, f'/usr/bin/{sumo}', lock, q))
             p.start()
-            chunk_name += 1
+            processes.append(p)
 
         for p in processes:
             p.join()
 
-        if settings['RUNS'] > 1:
+        if int(settings['RUNS']) > 1:
             #all_times = pd.DataFrame(columns=['cwt', 'twt']) 
-            file_name = f'[MULTIRUN_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}]' + settings['model']
+            file_name = f'[MULTIRUN_{time}]' + settings['model']
             for s in settings.keys():
                 file_name += '_' + s + ':' + str(settings[s])
             file_name += '|{}'
@@ -153,7 +159,8 @@ if __name__ == '__main__':
             twt_file = open('data/' + file_name.format('traffic-total') + '.txt', 'w')
             # Note that you have to call Queue.get() for each item you want to return.
             while not q.empty():
-                cwt, twt = q.get()
+                cwt = q.get()
+                twt = q.get()
                 cwt_file.write(str(cwt)+'\n')
                 twt_file.write(str(twt)+'\n')
             cwt_file.close()

@@ -1,3 +1,3 @@
-rm ../data/*
-rm ../logs/*
-rm ../plots/*
+rm data/*
+rm logs/*
+rm plots/*

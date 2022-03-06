@@ -34,6 +34,7 @@ class VehicleAuction(VehicleAbstract):
     def setBudget(self, budget):
         if budget > 0:
             self.budget = int(budget)
+        self.setLabel()
 
     def getBudget(self):
         return self.budget

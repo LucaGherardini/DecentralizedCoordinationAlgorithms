@@ -1,12 +1,14 @@
 import traci
+
+from src.vehiclesDict import VehiclesDict
+
 class Listener(traci.StepListener):
 
-    def __init__(self, step_limit, vehicles, settings):
+    def __init__(self, step_limit, settings):
         # When listener is initialized, vehicles have yet been spawned, with one simulation step for each of them
-        self.step_count = len(vehicles)
+        self.step_count = len(VehiclesDict.vd.keys())
         self.step_limit = step_limit
         self.simulation_status = True
-        self.vehicles = vehicles
         self.settings = settings
 
     # NOTE: step method wants argument 't'
@@ -21,17 +23,9 @@ class Listener(traci.StepListener):
             self.simulation_status = False
             return False
 
-        for v in self.vehicles:
+        for v in VehiclesDict.vd.values():
             v.reroute()
             v.setLabel()
-
-        # another for-loop is done to allow simultaneous updates (if 'applyContribution' is invoked in the 'hurryDiffusion' loop, a vehicle is updated before providing its original contribute in that time step (making hurry spreading "order dependent")
-        '''
-        if self.model_chosen == 'EB':
-            for v in self.vehicles:
-                v.applyContribution()
-                log_print('step: vehicle {} invocation of \'applyContribution\', with new hurry of {}'.format(v.getID(), v.getHurry()))
-        '''
 
         # indicate that the step listener should stay active in the next step
         return True
@@ -43,13 +37,13 @@ class Listener(traci.StepListener):
         return self.simulation_status
 
 class AutonomousListener(Listener):
-    def __init__(self, step_limit, vehicles, settings):
-        super().__init__(step_limit, vehicles, settings)
+    def __init__(self, step_limit, settings):
+        super().__init__(step_limit, settings)
 
     def step(self, t):
         super().step(t)
 
-        for v in self.vehicles:
+        for v in VehiclesDict.vd.values():
             v.action()
 
         return True

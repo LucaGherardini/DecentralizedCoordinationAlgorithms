@@ -48,10 +48,11 @@ class VehicleEB(VehicleAutonomous):
         for c in CrossroadsDict.getGlobalInEdges():
             if re.match(re_crossroads, c):
                 for v in traci.edge.getLastStepVehicleIDs(c):
-                    if traci.vehicle.isStopped(v):
-                        contenders += 1
-                        if float(traci.vehicle.getParameter(v, 'State')) > self.getHurry():
-                            break # you lost the comparison
+                    if v != self.getID():
+                        if traci.vehicle.isStopped(v):
+                            contenders += 1
+                            if float(traci.vehicle.getParameter(v, 'State')) > self.getHurry():
+                                break # you lost the comparison
                         
                 # if the inner loop finished without 'break', it means you can continue to search, else you lost at least a confront and you can quit
                 else:

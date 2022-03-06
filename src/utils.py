@@ -15,6 +15,7 @@ from src.vehicleDA import VehicleDA
 from src.vehicleEB import VehicleEB
 from src.crossroad import Crossroad
 from src.utility_print import *
+from src.vehiclesDict import VehiclesDict
 
 pt = PrettyTable()
 log_file = ""
@@ -418,21 +419,18 @@ def spawnCars(cars_to_spawn, settings):
     :return: dictionary of 'Vehicle' instances, labeled with given ID
     """
     routes = traci.route.getIDList()
-    vehicles = []
     for i in range(cars_to_spawn):
         traci.vehicle.add(str(i), routes[i % len(routes)])
         traci.simulationStep()
         if settings['model'] == 'Comp' or settings['model'] == 'Coop':
-            v = VehicleCA(str(i), settings)
+            VehicleCA(str(i), settings)
         if settings['model'] == 'EB':
-            v = VehicleEB(str(i), settings)
+            VehicleEB(str(i), settings)
         if settings['model'] == 'DA':
-            v = VehicleDA(str(i), settings)
+            VehicleDA(str(i), settings)
         
-        vehicles.append(v)
-        # Maximum speed is limited to 50 km/h (1.39 m/s) to allow comparison with Gambelli's simulation
-        traci.vehicle.setMaxSpeed(str(i), 1.39)
-    return vehicles
+        # Vehicles created are automatically added to VehiclesDict
+    return 
 
 
 def departCars(settings, dc, idle_times, listener):
@@ -457,7 +455,7 @@ def departCars(settings, dc, idle_times, listener):
         if not listener.getSimulationStatus():
             break
 
-def collectWT(vehicles, crossroads_names):
+def collectWT(crossroads_names):
     """
     Collects vehicles' waiting times (traffic and crossroad), divided for crossroad, and store in a common DataFrame.
     DataFrame is then accessed and elaborated on different representations (i.e. traffic and crossroad waiting times)
@@ -473,7 +471,7 @@ def collectWT(vehicles, crossroads_names):
     traffic_vehicles: statistics summarizing TRAFFIC waiting times, divided for each VEHICLE
     """
     df_waiting_times = pd.DataFrame(columns=['id', 'crossroad', 'crossroad_waiting_time', 'traffic_waiting_time'])
-    for v in vehicles:
+    for v in VehiclesDict.vd.values():
         v_wt = v.getCrossroadWaitedTimes()
         t_wt = v.getTrafficWaitedTimes()
         for c in crossroads_names:

@@ -1,13 +1,14 @@
 from src.utils import *
 from operator import itemgetter
 
+from src.vehiclesDict import VehiclesDict
+
 class IntersectionManager:
 
-    def __init__(self, settings, vehicles):
+    def __init__(self, settings):
         self.settings = settings
-        self.vehicles = vehicles
 
-    def intersectionControl(self, crossroad, listener):
+    def intersectionControl(self, crossroad):
         """
         Method inherited from any class that expands 'IntersectionManager' class.
         Vehicles near the crossroad are collected and stored in two separated lists, one for vehicles participating
@@ -55,7 +56,7 @@ class IntersectionManager:
     def collectWaitingVehicles(self, crossroad):
         crossroad_stop_list = []
         traffic_stop_list = defaultdict(list)
-        for v in self.vehicles:
+        for v in VehiclesDict.vd.values():
             road = traci.vehicle.getRoadID(v.getID())
             if traci.vehicle.isStopped(v.getID()) and road in crossroad.getInEdges():
                 log_print('collectWaitingVehicles: vehicle {} (on road {}) is added to {} crossroad stop list'.format(v.getID(), road, crossroad.getName()))

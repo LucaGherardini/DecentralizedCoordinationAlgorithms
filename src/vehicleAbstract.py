@@ -1,7 +1,8 @@
 import abc
+from random import randint
 
 from src.utils import *
-from random import randint
+from src.vehiclesDict import VehiclesDict
 
 '''
     Abstract class of a generic vehicle, to be expanded and customized for different models
@@ -21,6 +22,7 @@ class VehicleAbstract(abc.ABC):
 
         self.crossroads_waited_times = defaultdict(list)
         self.crossroad_waiting_time = 0
+        VehiclesDict.addVehicle(self)
 
     def __str__(self):
         return "Car " + self.getID()
@@ -79,7 +81,8 @@ class VehicleAbstract(abc.ABC):
             if re.match(crossroad_pattern, e):
                 counter += 1
                 edge_length = traci.lane.getLength(e + "_0")
-                traci.vehicle.setStop(self.id, e, float(edge_length), duration=1000000.0)
+                # Stops last 10 seconds, after which the vehicle will be free 
+                traci.vehicle.setStop(self.id, e, float(edge_length), duration=1000.0)
         return counter
     
 

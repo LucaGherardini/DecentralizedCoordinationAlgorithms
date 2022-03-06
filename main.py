@@ -24,22 +24,22 @@ def run(settings, model_chosen, chunk_name=0, time = datetime.now().strftime("%Y
         crossroads, edges, in_edges = infrastructureRetrieving(crossroads_names)
 
         # Vehicles are created all at once, then loaded into "vehicles" list of 'Vehicle' class instances
-        vehicles = spawnCars(settings['VS'], settings)
+        spawnCars(settings['VS'], settings)
 
         if model_chosen == 'Coop' or model_chosen == 'Comp':
             # Add a StepListener to increment step counter at each call of traci.simulationStep()
-            listener = Listener(settings['Stp'], vehicles, settings)
+            listener = Listener(settings['Stp'], settings)
         else:
-            listener = AutonomousListener(settings['Stp'], vehicles, settings)
+            listener = AutonomousListener(settings['Stp'], settings)
         traci.addStepListener(listener)
 
         log_file_initialization(chunk_name, settings, model_chosen, listener, time)
         log_print("Simulation starts")
 
         if model_chosen == 'Coop':
-            model = Cooperative(settings, vehicles)
+            model = Cooperative(settings)
         elif model_chosen == 'Comp':
-            model = Competitive(settings, vehicles)
+            model = Competitive(settings)
 
         # NOTE: EB and DA don't need a dedicated class, the specific vehicles 'are' the classes
 
@@ -52,7 +52,7 @@ def run(settings, model_chosen, chunk_name=0, time = datetime.now().strftime("%Y
                 idle_times = {}
                 for crossroad in crossroads.keys():
                     log_print('Handling crossroad {}'.format(crossroad))
-                    dc[crossroad], idle_times[crossroad] = model.intersectionControl(crossroads[crossroad], listener)
+                    dc[crossroad], idle_times[crossroad] = model.intersectionControl(crossroads[crossroad])
                     if not listener.getSimulationStatus():
                         break
 
@@ -69,12 +69,12 @@ def run(settings, model_chosen, chunk_name=0, time = datetime.now().strftime("%Y
         log_print('Simulation interrupted')
         print("Simulation interrupted")
     
-    return vehicles, crossroads_names
+    return crossroads_names
 
 def sim(configs, chunk_name=0, time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S"), sumoBinary="/usr/bin/sumo-gui", lock=None, q=None):
-    vehicles, crossroads_names = run(configs, configs['model'], chunk_name, time, sumoBinary)
+    crossroads_names = run(configs, configs['model'], chunk_name, time, sumoBinary)
 
-    cross_total, traffic_total, df_waiting_times, crossroads_wt, traffic_wt, crossroad_vehicles, traffic_vehicles = collectWT(vehicles, crossroads_names)
+    cross_total, traffic_total, df_waiting_times, crossroads_wt, traffic_wt, crossroad_vehicles, traffic_vehicles = collectWT(crossroads_names)
     
     file_name = f'{chunk_name}[' + time + ']' + configs['model']
     for s in configs.keys():

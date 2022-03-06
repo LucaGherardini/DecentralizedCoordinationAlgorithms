@@ -1,5 +1,5 @@
 model: EB
-IF: lin
+IF: log
 DF: gro
 SF: rbl
 IC: 10
@@ -9,5 +9,5 @@ DM: 10
 SP: AN
 Rts: r
 Stp: 10000
-VS: 100
+VS: 120
 RUNS: 10

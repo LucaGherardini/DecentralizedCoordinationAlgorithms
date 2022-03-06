@@ -1,5 +1,4 @@
 model: EB
-MCA: 1
 IF: lin
 DF: gro
 SF: std

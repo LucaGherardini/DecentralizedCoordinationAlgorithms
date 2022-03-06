@@ -1,0 +1,10 @@
+model: Comp
+CP: owp
+MCA: 2
+E: y
+Spn: 25
+Bdn: r
+Rts: r
+Stp: 10000
+VS: 120
+RUNS: 10

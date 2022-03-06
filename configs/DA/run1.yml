@@ -1,4 +1,7 @@
-model: DA
+model: Coop
+CP: avp
+MCA: 2
+E: n
 Bdn: r
 Rts: r
 Stp: 10000

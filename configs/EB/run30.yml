@@ -1,7 +1,7 @@
 model: EB
-IF: lin
-DF: gro
-SF: rbl
+IF: log
+DF: log
+SF: std
 IC: 10
 DC: 10
 SR: 100
@@ -9,5 +9,5 @@ DM: 10
 SP: AN
 Rts: r
 Stp: 10000
-VS: 100
+VS: 120
 RUNS: 10

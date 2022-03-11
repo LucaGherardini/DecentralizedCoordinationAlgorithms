@@ -1,9 +1,6 @@
-model: Coop
-CP: avp
-MCA: 2
-E: n
+model: DA
 Bdn: r
 Rts: r
 Stp: 10000
-VS: 80
+VS: 100
 RUNS: 10

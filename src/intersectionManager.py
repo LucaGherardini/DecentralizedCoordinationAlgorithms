@@ -77,7 +77,7 @@ class IntersectionManager:
         winner_total_bid = bids[0][1]
         winner_bid = bids[0][2]
         winner_enhance = bids[0][3]
-        log_print('sortBids: winner is vehicle {} with a \'bid\' of {}'.format(winner.getID(), winner_total_bid))
+        log_print('sortBids: winner is vehicle {} with a \'total bid\' of {}'.format(winner.getID(), winner_total_bid))
         return bids, winner, winner_total_bid, winner_bid, winner_enhance
 
     def bidPayment(self, bids, winner_bid):
@@ -88,6 +88,7 @@ class IntersectionManager:
         if self.settings['CP'] == 'avp':
             # range starts from '1' to skip first position (whom is the winner, always charged of its bid)
             for i in range(1, len(bids)):
+                # +1 is added to avoid a vehicle to completely exhaust its budget
                 bids[i][0].setBudget(bids[i][0].getBudget() - bids[i][1] + 1)
                 log_print('bigPayment: vehicle {} pays {} (new budget {})'.format(bids[i][0].getID(), bids[i][1] - 1, bids[i][0].getBudget()))
 

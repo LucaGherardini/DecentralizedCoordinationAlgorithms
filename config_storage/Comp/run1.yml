@@ -1,8 +1,7 @@
-model: Comp
-CP: owp
+model: Coop
+CP: avp
 MCA: 2
 E: n
-Spn: 50
 Bdn: r
 Rts: r
 Stp: 10000

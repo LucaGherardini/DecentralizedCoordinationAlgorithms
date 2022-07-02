@@ -25,7 +25,7 @@ class VehicleAbstract(abc.ABC):
         VehiclesDict.addVehicle(self)
 
     def __str__(self):
-        return "Car " + self.getID()
+        return "Vehicle " + self.getID()
 
     def reroute(self):
         """
@@ -38,7 +38,8 @@ class VehicleAbstract(abc.ABC):
         current_edge = self.getRoadID()
         rer = -1
         if current_edge == self.route[rer]:
-
+            # budget is set to its default only if the reroute is effectively necessary
+            self.setBudget(100)
             if self.settings['Rts'] == 'f':
                 self.route = self.route[rer::] + self.route[:rer:]
             else:

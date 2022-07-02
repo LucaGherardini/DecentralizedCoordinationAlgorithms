@@ -17,7 +17,6 @@ class VehicleAuction(VehicleAbstract):
 
     def reroute(self):
         super().reroute()
-        self.setBudget(100)
         return
 
     def makeBid(self):

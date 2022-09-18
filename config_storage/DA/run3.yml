@@ -1,0 +1,6 @@
+model: DA
+Bdn: r
+Rts: r
+Stp: 10000
+VS: 120
+RUNS: 10

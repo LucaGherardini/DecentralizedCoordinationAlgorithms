@@ -443,7 +443,7 @@ def departCars(settings, dc, idle_times, listener):
     :return:
     """
     log_print('departCars: start departing')
-    for i in range(settings['MCA']):
+    for i in range(4):
         for crossroad in dc.keys():
             if i < len(dc[crossroad]):
                 traci.vehicle.resume(dc[crossroad][i].getID())
